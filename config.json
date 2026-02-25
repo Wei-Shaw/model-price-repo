@@ -35,5 +35,9 @@
       "description": "Spark variant of GPT-5.3 Codex"
     }
   },
+  "cache_1hr_auto_fill": {
+    "model_prefix": "claude-",
+    "ratio": 1.6
+  },
   "custom_models": {}
 }

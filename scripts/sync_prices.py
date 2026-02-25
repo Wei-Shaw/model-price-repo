@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import copy
+from decimal import Decimal
 import hashlib
 import json
 import logging
@@ -191,11 +192,48 @@ def apply_aliases(data: dict, aliases: dict) -> dict:
 
 
 def apply_custom_models(data: dict, custom: dict) -> dict:
-    """Inject custom model definitions (always overwrite)."""
+    """Inject custom model definitions (deep merge for existing, full set for new)."""
     for key, value in custom.items():
-        data[key] = value
-        log.info("Custom model '%s' injected.", key)
+        if key in data and isinstance(data[key], dict) and isinstance(value, dict):
+            data[key].update(value)
+            log.info("Custom model '%s' merged (deep).", key)
+        else:
+            data[key] = value
+            log.info("Custom model '%s' injected.", key)
     return data
+
+
+def fill_cache_1hr_pricing(data: dict, config: dict) -> int:
+    """Auto-fill missing cache_creation_input_token_cost_above_1hr for matching models.
+
+    Uses a fixed ratio (default 1.6x) of the 5-minute cache write cost.
+    Returns the number of models auto-filled.
+    """
+    auto_fill_cfg = config.get("cache_1hr_auto_fill")
+    if not auto_fill_cfg:
+        return 0
+
+    prefix = auto_fill_cfg.get("model_prefix", "claude-")
+    ratio = auto_fill_cfg.get("ratio", 1.6)
+    count = 0
+
+    for key, value in data.items():
+        if not key.startswith(prefix):
+            continue
+        if not isinstance(value, dict):
+            continue
+        cost_5m = value.get("cache_creation_input_token_cost")
+        if cost_5m is None:
+            continue
+        if value.get("cache_creation_input_token_cost_above_1hr") is not None:
+            continue
+        value["cache_creation_input_token_cost_above_1hr"] = float(
+            Decimal(str(cost_5m)) * Decimal(str(ratio))
+        )
+        log.info("Auto-filled cache 1hr cost for '%s': %s * %s = %s", key, cost_5m, ratio, value["cache_creation_input_token_cost_above_1hr"])
+        count += 1
+
+    return count
 
 
 # ---------------------------------------------------------------------------
@@ -280,21 +318,25 @@ def main() -> None:
     if aliases:
         merged = apply_aliases(merged, aliases)
 
-    # 7. Custom models
+    # 7. Auto-fill cache 1hr pricing
+    cache_1hr_count = fill_cache_1hr_pricing(merged, config)
+
+    # 8. Custom models
     custom = config.get("custom_models", {})
     if custom:
         merged = apply_custom_models(merged, custom)
 
-    # 8. Write output
+    # 9. Write output
     changed, new_hash = write_output(merged, output_path, hash_path, old_hash)
 
-    # 9. Report
+    # 10. Report
     log.info("--- Sync Report ---")
     log.info("Total models in output: %d", len(merged))
     log.info("Added:     %d", stats["added"])
     log.info("Updated:   %d", stats["updated"])
     log.info("Unchanged: %d", stats["unchanged"])
     log.info("Aliases:   %d", len(aliases))
+    log.info("Cache 1hr auto-filled: %d", cache_1hr_count)
     log.info("Custom:    %d", len(custom))
 
     # Machine-readable output for CI
