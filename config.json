@@ -29,6 +29,10 @@
     "gemini-3.1-pro-low": {
       "source": "gemini-3.1-pro-preview",
       "description": "low quality tier, uses preview pricing"
+    },
+    "gpt-5.3-codex-spark": {
+      "source": "gpt-5.3-codex",
+      "description": "Spark variant of GPT-5.3 Codex"
     }
   },
   "custom_models": {}
