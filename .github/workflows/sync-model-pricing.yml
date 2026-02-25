@@ -1,0 +1,44 @@
+name: Sync Model Pricing
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: sync-pricing
+  cancel-in-progress: true
+
+jobs:
+  sync-pricing:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run sync script
+        id: sync
+        run: |
+          output=$(python3 scripts/sync_prices.py --config config.json --repo-root .)
+          echo "$output"
+          changed=$(echo "$output" | grep -oP 'CHANGED=\K(true|false)')
+          hash=$(echo "$output" | grep -oP 'HASH=\K\S+')
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          hash_prefix=$(echo "${{ steps.sync.outputs.hash }}" | cut -c1-8)
+          git add model_prices_and_context_window.json model_prices_and_context_window.sha256
+          git commit -m "chore: sync model pricing (${hash_prefix})"
+          git push

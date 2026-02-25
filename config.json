@@ -1,0 +1,35 @@
+{
+  "upstream_url": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
+  "output_file": "model_prices_and_context_window.json",
+  "hash_file": "model_prices_and_context_window.sha256",
+  "sync_mode": "additive",
+  "update_existing": false,
+  "prefix_filters": [
+    "claude-",
+    "gpt-",
+    "gemini-",
+    "o1-",
+    "o3-",
+    "o3",
+    "o4-",
+    "deepseek-"
+  ],
+  "exclude_patterns": [
+    "sample_spec"
+  ],
+  "aliases": {
+    "claude-opus-4-6-thinking": {
+      "source": "claude-opus-4-6",
+      "description": "Thinking variant, same pricing as claude-opus-4-6"
+    },
+    "gemini-3.1-pro-high": {
+      "source": "gemini-3.1-pro-preview",
+      "description": "High quality tier, uses preview pricing"
+    },
+    "gemini-3.1-pro-low": {
+      "source": "gemini-3.1-pro-preview",
+      "description": "low quality tier, uses preview pricing"
+    }
+  },
+  "custom_models": {}
+}
