@@ -33,6 +33,10 @@
     "gpt-5.3-codex-spark": {
       "source": "gpt-5.3-codex",
       "description": "Spark variant of GPT-5.3 Codex"
+    },
+    "gemini-3.1-flash-image": {
+      "source": "gemini-3.1-flash-image-preview",
+      "description": "Alias for gemini-3.1-flash-image-preview"
     }
   },
   "cache_1hr_auto_fill": {
