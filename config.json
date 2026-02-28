@@ -37,6 +37,10 @@
     "gemini-3.1-flash-image": {
       "source": "gemini-3.1-flash-image-preview",
       "description": "Alias for gemini-3.1-flash-image-preview"
+    },
+    "gemini-3-flash": {
+      "source": "gemini-3-flash-preview",
+      "description": "Alias for gemini-3-flash-preview"
     }
   },
   "cache_1hr_auto_fill": {
