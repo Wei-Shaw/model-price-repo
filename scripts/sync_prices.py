@@ -33,7 +33,7 @@ REQUIRED_CONFIG_KEYS = [
     "output_file",
     "hash_file",
     "sync_mode",
-    "prefix_filters",
+    "prefix_rules",
 ]
 
 
@@ -112,19 +112,38 @@ def fetch_upstream(url: str) -> dict:
 
 
 def filter_upstream(data: dict, config: dict) -> dict:
-    """Apply prefix_filters and exclude_patterns to upstream data."""
-    prefixes = tuple(config.get("prefix_filters", []))
+    """Apply prefix_rules and exclude_patterns to upstream data.
+
+    prefix_rules values:
+      - "keep":  retain original key as-is
+      - "strip": remove the matched prefix from the key
+      - "both":  keep both original and stripped key
+    """
+    rules: dict[str, str] = config.get("prefix_rules", {})
+    prefixes = tuple(rules.keys())
     excludes = config.get("exclude_patterns", [])
 
     filtered = {}
     for key, value in data.items():
-        # Exclude first
         if any(pat in key for pat in excludes):
             continue
-        # Then check prefix match
-        if prefixes and not key.startswith(prefixes):
+
+        matched_prefix = next((p for p in prefixes if key.startswith(p)), None)
+        if not matched_prefix:
             continue
-        filtered[key] = value
+
+        action = rules[matched_prefix]
+        stripped_key = key[len(matched_prefix):]
+
+        if action == "keep":
+            filtered[key] = value
+        elif action == "strip":
+            filtered[stripped_key] = value
+        elif action == "both":
+            filtered[key] = value
+            filtered[stripped_key] = value
+        else:
+            log.warning("Unknown prefix_rules action '%s' for prefix '%s'; skipping.", action, matched_prefix)
 
     log.info("Filtered to %d models (from %d upstream).", len(filtered), len(data))
     return filtered
