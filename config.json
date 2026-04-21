@@ -12,7 +12,8 @@
     "o3-",
     "o3",
     "o4-",
-    "deepseek-"
+    "deepseek-",
+    "xai/"
   ],
   "exclude_patterns": [
     "sample_spec"
@@ -41,6 +42,18 @@
     "gemini-3-flash": {
       "source": "gemini-3-flash-preview",
       "description": "Alias for gemini-3-flash-preview"
+    },
+    "grok-4.20-0309-non-reasoning": {
+      "source": "xai/grok-4.20-beta-0309-non-reasoning",
+      "description": "Internal alias for Grok 4.20 0309 non-reasoning"
+    },
+    "grok-4.20-0309-reasoning": {
+      "source": "xai/grok-4.20-0309-reasoning",
+      "description": "Internal alias for Grok 4.20 0309 reasoning"
+    },
+    "grok-4.20-0309": {
+      "source": "xai/grok-4.20-0309-reasoning",
+      "description": "Default alias for Grok 4.20 0309"
     }
   },
   "cache_1hr_auto_fill": {
@@ -112,6 +125,22 @@
       "supports_system_messages": true,
       "supports_tool_choice": true,
       "supports_vision": true
+    },
+    "grok-imagine-image-lite": {
+      "litellm_provider": "xai",
+      "mode": "image_generation",
+      "output_cost_per_image": 0.01,
+      "supported_endpoints": [
+        "/v1/chat/completions"
+      ],
+      "supported_modalities": [
+        "text",
+        "image"
+      ],
+      "supported_output_modalities": [
+        "image"
+      ],
+      "source": "manual: image-lite = $0.01/image"
     }
   }
 }
