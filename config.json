@@ -22,6 +22,10 @@
       "source": "claude-opus-4-6",
       "description": "Thinking variant, same pricing as claude-opus-4-6"
     },
+    "claude-opus-4-8": {
+      "source": "claude-opus-4-7",
+      "description": "claude-opus-4-7"
+    },
     "gemini-3.1-pro-high": {
       "source": "gemini-3.1-pro-preview",
       "description": "High quality tier, uses preview pricing"
