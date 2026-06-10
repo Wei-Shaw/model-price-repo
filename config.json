@@ -4,16 +4,19 @@
   "hash_file": "model_prices_and_context_window.sha256",
   "sync_mode": "additive",
   "update_existing": false,
-  "prefix_filters": [
-    "claude-",
-    "gpt-",
-    "gemini-",
-    "o1-",
-    "o3-",
-    "o3",
-    "o4-",
-    "deepseek-"
-  ],
+  "prefix_rules": {
+    "claude-":  "keep",
+    "gpt-":     "keep",
+    "gemini-":  "keep",
+    "o1-":      "keep",
+    "o3-":      "keep",
+    "o3":       "keep",
+    "o4-":      "keep",
+    "deepseek-":"keep",
+    "minimax/": "both",
+    "zai/":     "strip",
+    "moonshot/":"strip"
+  },
   "exclude_patterns": [
     "sample_spec"
   ],
