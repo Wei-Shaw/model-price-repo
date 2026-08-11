@@ -196,7 +196,13 @@ def apply_aliases(data: dict, aliases: dict) -> dict:
                 source,
             )
             continue
-        data[alias_key] = copy.deepcopy(data[source])
+        alias_value = copy.deepcopy(data[source])
+        if isinstance(alias_value, dict):
+            alias_value["pricing_reference_model"] = source
+            description = alias_cfg.get("description", "")
+            if description:
+                alias_value["pricing_reference_note"] = description
+        data[alias_key] = alias_value
         log.info("Alias '%s' -> '%s' applied.", alias_key, source)
     return data
 
@@ -244,6 +250,38 @@ def fill_cache_1hr_pricing(data: dict, config: dict) -> int:
         count += 1
 
     return count
+
+
+# ---------------------------------------------------------------------------
+# Catalog processing
+# ---------------------------------------------------------------------------
+
+
+def process_catalog(existing: dict, upstream: dict, config: dict) -> tuple[dict, dict, int]:
+    """Build the final catalog from upstream data and explicit configuration.
+
+    Custom models are applied before aliases so an alias can safely reference a
+    canonical model that is maintained in ``custom_models``. Explicit custom
+    values remain authoritative over automatically refreshed upstream data.
+    """
+    filtered = filter_upstream(upstream, config)
+    merged, stats = merge_models(
+        existing,
+        filtered,
+        config["sync_mode"],
+        config.get("update_existing", False),
+    )
+
+    custom = config.get("custom_models", {})
+    if custom:
+        merged = apply_custom_models(merged, custom)
+
+    aliases = config.get("aliases", {})
+    if aliases:
+        merged = apply_aliases(merged, aliases)
+
+    cache_1hr_count = fill_cache_1hr_pricing(merged, config)
+    return merged, stats, cache_1hr_count
 
 
 # ---------------------------------------------------------------------------
@@ -306,40 +344,21 @@ def main() -> None:
     # 3. Fetch upstream
     upstream = fetch_upstream(config["upstream_url"])
 
-    # 4. Filter
-    filtered = filter_upstream(upstream, config)
-
-    # 5. Merge
-    merged, stats = merge_models(
-        existing,
-        filtered,
-        config["sync_mode"],
-        config.get("update_existing", False),
-    )
+    # 4. Build final catalog
+    merged, stats, cache_1hr_count = process_catalog(existing, upstream, config)
     log.info(
         "Merge stats: %d added, %d updated, %d unchanged.",
         stats["added"],
         stats["updated"],
         stats["unchanged"],
     )
-
-    # 6. Aliases
     aliases = config.get("aliases", {})
-    if aliases:
-        merged = apply_aliases(merged, aliases)
-
-    # 7. Auto-fill cache 1hr pricing
-    cache_1hr_count = fill_cache_1hr_pricing(merged, config)
-
-    # 8. Custom models
     custom = config.get("custom_models", {})
-    if custom:
-        merged = apply_custom_models(merged, custom)
 
-    # 9. Write output
+    # 5. Write output
     changed, new_hash = write_output(merged, output_path, hash_path, old_hash)
 
-    # 10. Report
+    # 6. Report
     log.info("--- Sync Report ---")
     log.info("Total models in output: %d", len(merged))
     log.info("Added:     %d", stats["added"])
