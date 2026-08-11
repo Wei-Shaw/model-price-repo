@@ -3,7 +3,7 @@
   "output_file": "model_prices_and_context_window.json",
   "hash_file": "model_prices_and_context_window.sha256",
   "sync_mode": "additive",
-  "update_existing": false,
+  "update_existing": true,
   "prefix_filters": [
     "claude-",
     "gpt-",
@@ -12,7 +12,11 @@
     "o3-",
     "o3",
     "o4-",
-    "deepseek-"
+    "deepseek-",
+    "glm-",
+    "kimi-",
+    "minimax-",
+    "qwen"
   ],
   "exclude_patterns": [
     "sample_spec"
@@ -333,10 +337,10 @@
       "supports_vision": true
     },
     "kimi-k2.6": {
-      "input_cost_per_token": 9.54e-07,
-      "output_cost_per_token": 3.961e-06,
-      "cache_creation_input_token_cost": 9.54e-07,
-      "cache_read_input_token_cost": 1.61e-07,
+      "input_cost_per_token": 9.5e-07,
+      "output_cost_per_token": 4e-06,
+      "cache_creation_input_token_cost": null,
+      "cache_read_input_token_cost": 1.6e-07,
       "litellm_provider": "moonshot",
       "max_input_tokens": 1000000,
       "max_output_tokens": 384000,
@@ -355,13 +359,14 @@
       "supported_output_modalities": [
         "text"
       ],
-      "multi_vendor": true
+      "multi_vendor": true,
+      "source": "https://opencode.ai/docs/zh-cn/go/"
     },
     "glm-5.1": {
       "input_cost_per_token": 1.4e-06,
       "output_cost_per_token": 4.4e-06,
-      "cache_creation_input_token_cost": 1e-06,
-      "cache_read_input_token_cost": 2.8e-07,
+      "cache_creation_input_token_cost": null,
+      "cache_read_input_token_cost": 2.6e-07,
       "litellm_provider": "zhipu",
       "max_input_tokens": 81920,
       "max_output_tokens": 81920,
@@ -380,7 +385,8 @@
       "supported_output_modalities": [
         "text"
       ],
-      "multi_vendor": true
+      "multi_vendor": true,
+      "source": "https://opencode.ai/docs/zh-cn/go/"
     },
     "minimax-m2.7": {
       "input_cost_per_token": 3e-07,
@@ -537,6 +543,82 @@
       "supports_response_schema": true,
       "supports_tool_choice": true,
       "supports_vision": true
+    },
+    "gpt-5.5-pro": {
+      "cache_read_input_token_cost": null,
+      "cache_read_input_token_cost_above_272k_tokens": null,
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.5-pro"
+    },
+    "glm-5.2": {
+      "input_cost_per_token": 1.4e-06,
+      "output_cost_per_token": 4.4e-06,
+      "cache_read_input_token_cost": 2.6e-07,
+      "cache_creation_input_token_cost": null,
+      "litellm_provider": "zhipu",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
+    },
+    "kimi-k2.7-code": {
+      "input_cost_per_token": 9.5e-07,
+      "output_cost_per_token": 4e-06,
+      "cache_read_input_token_cost": 1.9e-07,
+      "cache_creation_input_token_cost": null,
+      "litellm_provider": "moonshot",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
+    },
+    "kimi-k3": {
+      "input_cost_per_token": 3e-06,
+      "output_cost_per_token": 1.5e-05,
+      "cache_read_input_token_cost": 3e-07,
+      "cache_creation_input_token_cost": null,
+      "litellm_provider": "moonshot",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
+    },
+    "minimax-m3": {
+      "input_cost_per_token": 3e-07,
+      "output_cost_per_token": 1.2e-06,
+      "cache_read_input_token_cost": 6e-08,
+      "cache_creation_input_token_cost": null,
+      "litellm_provider": "minimax",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
+    },
+    "qwen3.6-plus": {
+      "input_cost_per_token": 5e-07,
+      "output_cost_per_token": 3e-06,
+      "cache_read_input_token_cost": 5e-08,
+      "cache_creation_input_token_cost": 6.25e-07,
+      "input_cost_per_token_above_256k_tokens": 2e-06,
+      "output_cost_per_token_above_256k_tokens": 6e-06,
+      "cache_read_input_token_cost_above_256k_tokens": 2e-07,
+      "cache_creation_input_token_cost_above_256k_tokens": 2.5e-06,
+      "litellm_provider": "qwen",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
+    },
+    "qwen3.7-max": {
+      "input_cost_per_token": 2.5e-06,
+      "output_cost_per_token": 7.5e-06,
+      "cache_read_input_token_cost": 5e-07,
+      "cache_creation_input_token_cost": 3.125e-06,
+      "litellm_provider": "qwen",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
+    },
+    "qwen3.7-plus": {
+      "input_cost_per_token": 4e-07,
+      "output_cost_per_token": 1.6e-06,
+      "cache_read_input_token_cost": 4e-08,
+      "cache_creation_input_token_cost": 5e-07,
+      "input_cost_per_token_above_256k_tokens": 1.2e-06,
+      "output_cost_per_token_above_256k_tokens": 4.8e-06,
+      "cache_read_input_token_cost_above_256k_tokens": 1.2e-07,
+      "cache_creation_input_token_cost_above_256k_tokens": 1.5e-06,
+      "litellm_provider": "qwen",
+      "mode": "chat",
+      "source": "https://opencode.ai/docs/zh-cn/go/"
     }
   }
 }
