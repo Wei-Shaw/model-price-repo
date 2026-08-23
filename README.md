@@ -77,6 +77,20 @@ MODEL_PRICES_URL=https://raw.githubusercontent.com/<owner>/model-price-repo/main
 
 The output JSON structure is identical to what litellm produces (model key -> pricing object), so CRS `pricingService.js` works without changes.
 
+## DeepSeek peak/off-peak pricing convention
+
+DeepSeek bills peak/off-peak rates:
+
+- **Time-of-use (peak/off-peak) pricing** took effect on **2026-08-16 16:00 UTC** (Beijing time 2026-08-17 00:00); see the [official changelog](https://api-docs.deepseek.com/updates).
+- **Weekend all-off-peak** took effect on Beijing time **2026-08-23 00:00** (2026-08-22 16:00 UTC). The current time windows, per the [official pricing page](https://api-docs.deepseek.com/quick_start/pricing):
+
+  - Peak hours: 01:00–04:00 and 06:00–10:00 UTC, Monday through Friday (Beijing time weekdays)
+  - Peak rate = 2× off-peak rate; all other hours (including weekends) are off-peak
+
+This file is a static price card and cannot express the time dimension, so the official v4 entries (`deepseek-v4-flash`, `deepseek-v4-pro`, `deepseek-v4-flash-vision-exp`) record the **off-peak rates**. Consumers that bill DeepSeek traffic MUST apply the 2× peak multiplier themselves during the peak windows above; billing the recorded rates around the clock under-charges peak traffic by half.
+
+The deprecated `deepseek-chat` / `deepseek-reasoner` entries are an **exception**: they record the **flat rates** in effect when the services were decommissioned (2026-07-24) and must NOT be multiplied by 2 — they were retired before peak/off-peak pricing took effect. Earlier historical prices may differ, so precise historical billing requires a time-versioned price card.
+
 ## License
 
 [MIT](LICENSE)
