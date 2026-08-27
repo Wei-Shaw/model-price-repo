@@ -381,11 +381,20 @@
         "/v1/chat/completions"
       ],
       "supported_modalities": [
-        "text"
+        "text",
+        "image",
+        "video"
+      ],
+      "supported_input_modalities": [
+        "text",
+        "image",
+        "video"
       ],
       "supported_output_modalities": [
         "text"
       ],
+      "supports_video_input": true,
+      "supports_vision": true,
       "multi_vendor": true
     },
     "kimi-k3": {
@@ -394,7 +403,7 @@
       "cache_creation_input_token_cost": 2.9480697513303164e-06,
       "cache_read_input_token_cost": 2.948069751330317e-07,
       "litellm_provider": "moonshot",
-      "max_input_tokens": 1000000,
+      "max_input_tokens": 1048576,
       "mode": "chat",
       "source": "https://platform.kimi.com/docs/pricing/chat-k3",
       "supports_prompt_caching": true,
@@ -408,11 +417,20 @@
         "/v1/chat/completions"
       ],
       "supported_modalities": [
-        "text"
+        "text",
+        "image",
+        "video"
+      ],
+      "supported_input_modalities": [
+        "text",
+        "image",
+        "video"
       ],
       "supported_output_modalities": [
         "text"
       ],
+      "supports_video_input": true,
+      "supports_vision": true,
       "multi_vendor": true
     },
     "glm-5.1": {
