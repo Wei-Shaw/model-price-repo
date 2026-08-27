@@ -26,6 +26,10 @@
       "source": "claude-opus-4-7",
       "description": "claude-opus-4-7"
     },
+    "gemini-3.1-pro": {
+      "source": "gemini-3.1-pro-preview",
+      "description": "Canonical display alias for the Gemini 3.1 Pro Preview endpoint"
+    },
     "gemini-3.1-pro-high": {
       "source": "gemini-3.1-pro-preview",
       "description": "High quality tier, uses preview pricing"
