@@ -3118,6 +3118,13 @@
     "supports_system_messages": true,
     "supports_tool_choice": true
   },
+  "glm-5.3": {
+    "cache_read_input_token_cost": 2.6e-07,
+    "input_cost_per_token": 1.4e-06,
+    "litellm_provider": "zhipu",
+    "output_cost_per_token": 4.4e-06,
+    "source": "https://docs.z.ai/guides/overview/pricing"
+  },
   "gpt-3.5-turbo": {
     "deprecation_date": "2026-10-23",
     "input_cost_per_token": 5e-07,

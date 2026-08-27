@@ -487,6 +487,13 @@
       ],
       "multi_vendor": true
     },
+    "glm-5.3": {
+      "input_cost_per_token": 1.4e-06,
+      "output_cost_per_token": 4.4e-06,
+      "cache_read_input_token_cost": 2.6e-07,
+      "litellm_provider": "zhipu",
+      "source": "https://docs.z.ai/guides/overview/pricing"
+    },
     "minimax-m2.7": {
       "input_cost_per_token": 3e-07,
       "output_cost_per_token": 1.2e-06,
