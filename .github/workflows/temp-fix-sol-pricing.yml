@@ -1,0 +1,68 @@
+name: Apply GPT-5.6 Sol pricing fix
+
+on:
+  push:
+    branches:
+      - fix/gpt-5.6-sol-pricing
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/gpt-5.6-sol-pricing
+
+      - name: Update pricing and regenerate output
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('config.json')
+          data = json.loads(path.read_text())
+          m = data['custom_models']['gpt-5.6-sol']
+          m.update({
+              'input_cost_per_token': 4e-06,
+              'input_cost_per_token_above_272k_tokens': 8e-06,
+              'input_cost_per_token_priority': 8e-06,
+              'input_cost_per_token_above_272k_tokens_priority': 1.6e-05,
+              'input_cost_per_token_flex': 2e-06,
+              'input_cost_per_token_above_272k_tokens_flex': 4e-06,
+              'input_cost_per_token_batches': 2e-06,
+              'output_cost_per_token': 2e-05,
+              'output_cost_per_token_above_272k_tokens': 3e-05,
+              'output_cost_per_token_priority': 4e-05,
+              'output_cost_per_token_above_272k_tokens_priority': 6e-05,
+              'output_cost_per_token_flex': 1e-05,
+              'output_cost_per_token_above_272k_tokens_flex': 1.5e-05,
+              'output_cost_per_token_batches': 1e-05,
+              'cache_read_input_token_cost': 4e-07,
+              'cache_read_input_token_cost_above_272k_tokens': 8e-07,
+              'cache_read_input_token_cost_priority': 8e-07,
+              'cache_read_input_token_cost_above_272k_tokens_priority': 1.6e-06,
+              'cache_read_input_token_cost_flex': 2e-07,
+              'cache_read_input_token_cost_above_272k_tokens_flex': 4e-07,
+              'cache_creation_input_token_cost': 5e-06,
+              'cache_creation_input_token_cost_above_272k_tokens': 1e-05,
+              'cache_creation_input_token_cost_priority': 1e-05,
+              'cache_creation_input_token_cost_above_272k_tokens_priority': 2e-05,
+              'cache_creation_input_token_cost_flex': 2.5e-06,
+              'cache_creation_input_token_cost_above_272k_tokens_flex': 5e-06,
+          })
+          path.write_text(json.dumps(data, indent=2) + '\n')
+          PY
+
+          python3 scripts/sync_prices.py --config config.json --repo-root .
+          git rm .github/workflows/temp-fix-sol-pricing.yml
+
+      - name: Commit generated fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config.json model_prices_and_context_window.json model_prices_and_context_window.sha256 .github/workflows/temp-fix-sol-pricing.yml
+          git commit -m "fix: update GPT-5.6 Sol pricing"
+          git push origin HEAD:fix/gpt-5.6-sol-pricing
