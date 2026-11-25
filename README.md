@@ -42,6 +42,8 @@ Edit the `prefix_filters` array in `config.json`:
 }
 ```
 
+With the `gemini-` prefix filter, a LiteLLM entry such as `gemini/gemini-4-neon` also supplies pricing for the Gemini API model ID `gemini-4-neon`. An explicit upstream entry for the bare ID takes precedence.
+
 ### Adding aliases
 
 Aliases create copies of an existing model's pricing under a new key:

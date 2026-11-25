@@ -121,10 +121,14 @@ def filter_upstream(data: dict, config: dict) -> dict:
         # Exclude first
         if any(pat in key for pat in excludes):
             continue
-        # Then check prefix match
-        if prefixes and not key.startswith(prefixes):
-            continue
-        filtered[key] = value
+        if not prefixes or key.startswith(prefixes):
+            filtered[key] = value
+
+        # LiteLLM can list a Google AI Studio model only under its provider prefix.
+        if prefixes and key.startswith("gemini/gemini-"):
+            model_id = key.removeprefix("gemini/")
+            if model_id.startswith(prefixes) and model_id not in data:
+                filtered[model_id] = copy.deepcopy(value)
 
     log.info("Filtered to %d models (from %d upstream).", len(filtered), len(data))
     return filtered
