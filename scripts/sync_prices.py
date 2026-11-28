@@ -130,6 +130,73 @@ def filter_upstream(data: dict, config: dict) -> dict:
     return filtered
 
 
+def collect_provider_models(data: dict, filtered: dict, config: dict) -> dict:
+    """Pick up models that upstream only publishes under a provider prefix.
+
+    Each entry of ``provider_sources`` is ``{"provider": "gemini/",
+    "prefixes": ["gemini-"]}``: upstream keys ``<provider><name>`` whose
+    ``<name>`` starts with one of ``prefixes`` are exposed as ``<name>``.
+
+    Precedence: bare upstream keys (already in ``filtered``) always win, then
+    provider sources in the order they are listed. ``exclude_patterns`` apply
+    to the stripped name. ``alias_of`` targets pointing at the same provider
+    are rewritten to the stripped name. ``"lowercase": true`` lower-cases the
+    stripped name (e.g. ``minimax/MiniMax-M3`` -> ``minimax-m3``).
+    """
+    sources = config.get("provider_sources", [])
+    if not sources:
+        return {}
+    excludes = config.get("exclude_patterns", [])
+
+    picked: dict = {}
+    origin: dict = {}
+    for src in sources:
+        provider = src.get("provider", "")
+        name_prefixes = tuple(src.get("prefixes", []))
+        lowercase = bool(src.get("lowercase", False))
+        if not provider.endswith("/") or not name_prefixes:
+            log.warning("provider_sources entry %r is invalid; skipping.", src)
+            continue
+
+        def strip(full_key: str) -> str:
+            stripped = full_key[len(provider):]
+            return stripped.lower() if lowercase else stripped
+
+        for key, value in data.items():
+            if not key.startswith(provider):
+                continue
+            name = strip(key)
+            # Only plain model names (no nested provider paths, no @version tags)
+            if not name or "/" in name or "@" in name:
+                continue
+            if not name.startswith(name_prefixes):
+                continue
+            if any(pat in name for pat in excludes):
+                continue
+            if name in filtered or name in picked:
+                continue
+            if not isinstance(value, dict):
+                continue
+            value = copy.deepcopy(value)
+            target = value.get("alias_of")
+            if isinstance(target, str) and target.startswith(provider):
+                value["alias_of"] = strip(target)
+            picked[name] = value
+            origin[name] = key
+
+    # Drop alias entries whose target cannot be resolved in the output.
+    for name in [n for n, v in picked.items() if "alias_of" in v]:
+        target = picked[name]["alias_of"]
+        if target not in filtered and target not in picked:
+            log.warning("Provider alias '%s' -> '%s' has no resolvable target; skipping.", name, target)
+            del picked[name]
+
+    for name in sorted(picked):
+        log.info("Provider model '%s' <- '%s'.", name, origin[name])
+    log.info("Collected %d provider-prefixed models.", len(picked))
+    return picked
+
+
 # ---------------------------------------------------------------------------
 # Merge
 # ---------------------------------------------------------------------------
@@ -159,6 +226,9 @@ def merge_models(
             merged[key] = value
             stats["added"] += 1
         elif update_existing:
+            # Upstream is the source of truth: the stored entry is rebuilt from
+            # upstream every run (custom fields / derived fields are layered on
+            # later), so stale fields upstream dropped do not linger.
             if merged[key] != value:
                 merged[key] = value
                 stats["updated"] += 1
@@ -185,9 +255,16 @@ def merge_models(
 # ---------------------------------------------------------------------------
 
 
-def apply_aliases(data: dict, aliases: dict) -> dict:
-    """Deep-copy source model data into alias keys."""
+def apply_aliases(data: dict, aliases: dict, upstream_keys: frozenset = frozenset()) -> dict:
+    """Deep-copy source model data into alias keys.
+
+    Aliases whose key is in ``upstream_keys`` (upstream now ships a real entry
+    for that name) are skipped so the upstream entry wins.
+    """
     for alias_key, alias_cfg in aliases.items():
+        if alias_key in upstream_keys:
+            log.info("Alias '%s' skipped: upstream provides this model directly.", alias_key)
+            continue
         source = alias_cfg.get("source", "")
         if source not in data:
             log.warning(
@@ -201,15 +278,30 @@ def apply_aliases(data: dict, aliases: dict) -> dict:
     return data
 
 
-def apply_custom_models(data: dict, custom: dict) -> dict:
-    """Inject custom model definitions (deep merge for existing, full set for new)."""
+def apply_custom_models(data: dict, custom: dict, upstream: dict, upstream_wins: bool) -> dict:
+    """Inject custom model definitions.
+
+    - Model not provided by upstream: the custom definition is injected as-is
+      (merged over any previously stored entry).
+    - Model provided by upstream and ``upstream_wins``: custom fields are only
+      applied where upstream does not provide that field (upstream > custom).
+    - Model provided by upstream and not ``upstream_wins``: custom fields
+      override (legacy behaviour).
+    """
     for key, value in custom.items():
-        if key in data and isinstance(data[key], dict) and isinstance(value, dict):
-            data[key].update(value)
-            log.info("Custom model '%s' merged (deep).", key)
-        else:
-            data[key] = value
+        existing = data.get(key)
+        if not (isinstance(existing, dict) and isinstance(value, dict)):
+            data[key] = copy.deepcopy(value)
             log.info("Custom model '%s' injected.", key)
+            continue
+        upstream_value = upstream.get(key)
+        if upstream_wins and isinstance(upstream_value, dict):
+            fill = {k: copy.deepcopy(v) for k, v in value.items() if k not in upstream_value}
+            existing.update(fill)
+            log.info("Custom model '%s' applied %d field(s) not provided upstream.", key, len(fill))
+        else:
+            existing.update(copy.deepcopy(value))
+            log.info("Custom model '%s' merged (deep).", key)
     return data
 
 
@@ -306,15 +398,19 @@ def main() -> None:
     # 3. Fetch upstream
     upstream = fetch_upstream(config["upstream_url"])
 
-    # 4. Filter
+    # 4. Filter (bare keys first, then provider-prefixed fallbacks)
     filtered = filter_upstream(upstream, config)
+    filtered.update(collect_provider_models(upstream, filtered, config))
 
     # 5. Merge
+    update_existing = config.get("update_existing", False)
+    # Later steps mutate merged entries in place; keep `filtered` pristine so
+    # custom-model precedence is decided against real upstream data.
     merged, stats = merge_models(
         existing,
-        filtered,
+        copy.deepcopy(filtered),
         config["sync_mode"],
-        config.get("update_existing", False),
+        update_existing,
     )
     log.info(
         "Merge stats: %d added, %d updated, %d unchanged.",
@@ -323,18 +419,33 @@ def main() -> None:
         stats["unchanged"],
     )
 
-    # 6. Aliases
     aliases = config.get("aliases", {})
-    if aliases:
-        merged = apply_aliases(merged, aliases)
-
-    # 7. Auto-fill cache 1hr pricing
-    cache_1hr_count = fill_cache_1hr_pricing(merged, config)
-
-    # 8. Custom models
     custom = config.get("custom_models", {})
-    if custom:
-        merged = apply_custom_models(merged, custom)
+
+    if update_existing:
+        # Upstream entries are rebuilt fresh each run, so aliases must copy the
+        # source *after* its custom fields are applied (otherwise they would
+        # lose them). Custom entries keyed by an alias are applied last.
+        cache_1hr_count = fill_cache_1hr_pricing(merged, config)
+        active_aliases = {k: v for k, v in aliases.items() if k not in filtered}
+        base_custom = {k: v for k, v in custom.items() if k not in active_aliases}
+        alias_custom = {k: v for k, v in custom.items() if k in active_aliases}
+        merged = apply_custom_models(merged, base_custom, filtered, True)
+        if aliases:
+            merged = apply_aliases(merged, aliases, frozenset(filtered))
+        merged = apply_custom_models(merged, alias_custom, filtered, True)
+    else:
+        # Legacy order (kept byte-for-byte compatible).
+        # 6. Aliases
+        if aliases:
+            merged = apply_aliases(merged, aliases)
+
+        # 7. Auto-fill cache 1hr pricing
+        cache_1hr_count = fill_cache_1hr_pricing(merged, config)
+
+        # 8. Custom models
+        if custom:
+            merged = apply_custom_models(merged, custom, filtered, False)
 
     # 9. Write output
     changed, new_hash = write_output(merged, output_path, hash_path, old_hash)

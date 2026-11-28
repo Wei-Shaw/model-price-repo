@@ -3,7 +3,7 @@
   "output_file": "model_prices_and_context_window.json",
   "hash_file": "model_prices_and_context_window.sha256",
   "sync_mode": "additive",
-  "update_existing": false,
+  "update_existing": true,
   "prefix_filters": [
     "claude-",
     "gpt-",
@@ -13,6 +13,15 @@
     "o3",
     "o4-",
     "deepseek-"
+  ],
+  "provider_sources": [
+    { "provider": "gemini/", "prefixes": ["gemini-"] },
+    { "provider": "vertex_ai/", "prefixes": ["gemini-"] },
+    { "provider": "xai/", "prefixes": ["grok-"] },
+    { "provider": "zai/", "prefixes": ["glm-"] },
+    { "provider": "moonshot/", "prefixes": ["kimi-"] },
+    { "provider": "minimax/", "prefixes": ["minimax-"], "lowercase": true },
+    { "provider": "deepseek/", "prefixes": ["deepseek-"] }
   ],
   "exclude_patterns": [
     "sample_spec"
@@ -360,12 +369,12 @@
     "kimi-k2.6": {
       "input_cost_per_token": 9.54e-07,
       "output_cost_per_token": 3.961e-06,
-      "cache_creation_input_token_cost": 9.54e-07,
+      "cache_creation_input_token_cost": 9.5e-07,
       "cache_read_input_token_cost": 1.61e-07,
       "litellm_provider": "moonshot",
       "max_input_tokens": 1000000,
       "max_output_tokens": 384000,
-      "max_tokens": 384000,
+      "max_tokens": 262144,
       "mode": "chat",
       "supports_prompt_caching": true,
       "supports_reasoning": true,
@@ -385,7 +394,7 @@
     "kimi-k2.7-code": {
       "input_cost_per_token": 9.581226691823528e-07,
       "output_cost_per_token": 3.979894164295927e-06,
-      "cache_creation_input_token_cost": 9.581226691823528e-07,
+      "cache_creation_input_token_cost": 9.5e-07,
       "cache_read_input_token_cost": 1.916245338364706e-07,
       "litellm_provider": "moonshot",
       "max_input_tokens": 262144,
@@ -455,38 +464,10 @@
       "multi_vendor": true
     },
     "glm-5": {
-      "_comment": "BigModel China public API pricing converted at the Ccode fixed rate 1 USD = 6.7841 CNY. The provider lists cache storage as temporarily free; that time-limited storage promotion is not encoded as a permanent token price.",
       "input_cost_per_token": 5.896139502660633e-07,
       "output_cost_per_token": 2.653262776197285e-06,
       "cache_creation_input_token_cost": 5.896139502660633e-07,
       "cache_read_input_token_cost": 1.474034875665158e-07,
-      "long_context_input_token_threshold": 32000,
-      "long_context_threshold_inclusive": true,
-      "long_context_input_cost_multiplier": 1.5,
-      "long_context_output_cost_multiplier": 1.2222222222222223,
-      "long_context_cache_read_cost_multiplier": 1.5,
-      "tiered_pricing": [
-        {
-          "range": [
-            0,
-            32000
-          ],
-          "input_cost_per_token": 5.896139502660633e-07,
-          "output_cost_per_token": 2.653262776197285e-06,
-          "cache_creation_input_token_cost": 5.896139502660633e-07,
-          "cache_read_input_token_cost": 1.474034875665158e-07
-        },
-        {
-          "range": [
-            32000,
-            200000
-          ],
-          "input_cost_per_token": 8.844209253990949e-07,
-          "output_cost_per_token": 3.242876726463348e-06,
-          "cache_creation_input_token_cost": 8.844209253990949e-07,
-          "cache_read_input_token_cost": 2.211052313497737e-07
-        }
-      ],
       "litellm_provider": "zhipu",
       "max_input_tokens": 200000,
       "max_output_tokens": 128000,
@@ -576,7 +557,7 @@
       "litellm_provider": "zhipu",
       "max_input_tokens": 81920,
       "max_output_tokens": 81920,
-      "max_tokens": 81920,
+      "max_tokens": 128000,
       "mode": "chat",
       "supports_prompt_caching": true,
       "supports_reasoning": true,
@@ -662,7 +643,7 @@
       "litellm_provider": "moonshot",
       "max_input_tokens": 131072,
       "max_output_tokens": 131072,
-      "max_tokens": 131072,
+      "max_tokens": 262144,
       "mode": "chat",
       "supports_prompt_caching": true,
       "supports_reasoning": true,
@@ -699,7 +680,7 @@
       "input_cost_per_token_above_200k_tokens": 4e-06,
       "output_cost_per_token_above_200k_tokens": 1.2e-05,
       "cache_read_input_token_cost_above_200k_tokens": 6e-07,
-      "_comment": "Per docs.x.ai/developers/models/grok-4.5: <200k $2.00 / cached $0.30 / $6.00; >=200k $4.00 / $0.60 / $12.00. 'Requests whose prompt reaches 200k tokens are billed at the higher rate for all tokens in the request.' (xAI moves to the higher tier as soon as the threshold is reached.) The three above_200k fields match LiteLLM's xai/grok-* entries; LiteLLM has no bare key of this name, so they are never absorbed automatically."
+      "_comment": "Per docs.x.ai/developers/models/grok-4.5: <200k $2.00 / cached $0.30 / $6.00; >=200k $4.00 / $0.60 / $12.00. 'Requests whose prompt reaches 200k tokens are billed at the higher rate for all tokens in the request.' (xAI moves to the higher tier as soon as the threshold is reached.) The three above_200k fields match LiteLLM's xai/grok-* entries;"
     },
     "grok-4.6": {
       "cache_read_input_token_cost": 5e-07,
@@ -1054,6 +1035,76 @@
       "web_search_billing_unit": "per_query",
       "cache_creation_input_token_cost": 1.5e-06,
       "cache_creation_input_token_cost_priority": 2.7e-06
+    },
+    "gemini-4-neon": {
+      "cache_read_input_token_cost": 1.5e-07,
+      "cache_read_input_token_cost_batches": 7.5e-08,
+      "cache_read_input_token_cost_flex": 7.5e-08,
+      "cache_read_input_token_cost_priority": 2.7e-07,
+      "google_maps_grounding_cost_per_query": 0.014,
+      "input_cost_per_token": 3e-06,
+      "input_cost_per_token_batches": 1.5e-06,
+      "input_cost_per_token_flex": 1.5e-06,
+      "input_cost_per_token_priority": 5.4e-06,
+      "litellm_provider": "gemini",
+      "max_input_tokens": 1048576,
+      "max_output_tokens": 1048576,
+      "mode": "chat",
+      "output_cost_per_reasoning_token": 1.5e-05,
+      "output_cost_per_token": 1.5e-05,
+      "output_cost_per_token_batches": 7.5e-06,
+      "output_cost_per_token_flex": 7.5e-06,
+      "output_cost_per_token_priority": 2.7e-05,
+      "prompt_cache_min_tokens": 4096.0,
+      "rpm": 2000.0,
+      "search_context_cost_per_query": {
+        "search_context_size_low": 0.014,
+        "search_context_size_medium": 0.014,
+        "search_context_size_high": 0.014
+      },
+      "search_free_requests": {
+        "count": 5000,
+        "period": "month",
+        "shared_group": "gemini-3"
+      },
+      "source": "https://aistudio.google.com/docs/pricing#gemini-4-neon",
+      "supported_endpoints": [
+        "/v1/chat/completions",
+        "/v1/completions"
+      ],
+      "supported_modalities": [
+        "text",
+        "image",
+        "audio",
+        "video"
+      ],
+      "supported_output_modalities": [
+        "text"
+      ],
+      "supports_audio_input": true,
+      "supports_audio_output": false,
+      "supports_computer_use": true,
+      "supports_continuation": true,
+      "supports_function_calling": true,
+      "supports_minimal_reasoning_effort": false,
+      "supports_native_streaming": true,
+      "supports_parallel_function_calling": true,
+      "supports_pdf_input": true,
+      "supports_prompt_caching": true,
+      "supports_reasoning": true,
+      "supports_response_schema": true,
+      "supports_system_messages": true,
+      "supports_tool_choice": true,
+      "supports_url_context": true,
+      "supports_video_input": true,
+      "supports_vision": true,
+      "supports_web_search": true,
+      "supports_search_tools_with_functions": true,
+      "supports_xhigh_reasoning_effort": true,
+      "tpm": 800000.0,
+      "web_search_billing_unit": "per_query",
+      "cache_creation_input_token_cost": 3e-06,
+      "cache_creation_input_token_cost_priority": 5.4e-06
     },
     "gemini-omni-1.2-flash": {
       "input_cost_per_image_token": 1.5e-06,
